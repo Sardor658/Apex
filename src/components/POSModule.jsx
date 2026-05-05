@@ -32,6 +32,8 @@ const POSModule = ({ inventory, onTransaction }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [activeWeightItem, setActiveWeightItem] = useState(null);
   const [weightValue, setWeightValue] = useState(250);
+  const [promoCode, setPromoCode] = useState('');
+  const [discountPercent, setDiscountPercent] = useState(0);
   const { showNotification } = useNotification();
 
   const [lastKeyTime, setLastKeyTime] = useState(Date.now());
@@ -128,8 +130,18 @@ const POSModule = ({ inventory, onTransaction }) => {
 
   const subtotal = cart.reduce((acc, curr) => acc + (curr.sellingPrice * curr.qty), 0);
   const tax = subtotal * 0.12;
-  const discount = 0; // Can be implemented later
+  const discount = (subtotal * discountPercent) / 100;
   const total = subtotal + tax - discount;
+
+  const applyPromoCode = () => {
+    if (promoCode.trim().toLowerCase() === 'salom123') {
+      setDiscountPercent(15);
+      showNotification("15% chegirma qo'llanildi!", 'success');
+    } else {
+      setDiscountPercent(0);
+      showNotification("Noto'g'ri promo kod", 'error');
+    }
+  };
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
@@ -141,6 +153,8 @@ const POSModule = ({ inventory, onTransaction }) => {
     onTransaction(cart, paymentMethod);
     setCart([]);
     setPaymentMethod('naqd');
+    setPromoCode('');
+    setDiscountPercent(0);
     showNotification("Xarid muvaffaqiyatli yakunlandi!", 'success');
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
@@ -409,9 +423,15 @@ const POSModule = ({ inventory, onTransaction }) => {
             <input 
               type="text" 
               placeholder="Chegirma yoki promo kod" 
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && applyPromoCode()}
               style={{ background: 'transparent', border: 'none', outline: 'none', flex: 1, fontSize: '0.85rem', color: 'var(--text-main)' }}
             />
-            <button style={{ border: 'none', background: 'rgba(124, 77, 255, 0.2)', color: 'var(--accent-purple)', padding: '6px 12px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
+            <button 
+              onClick={applyPromoCode}
+              style={{ border: 'none', background: 'rgba(124, 77, 255, 0.2)', color: 'var(--accent-purple)', padding: '6px 12px', borderRadius: '10px', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}
+            >
               Qo'llash
             </button>
           </div>
@@ -422,7 +442,7 @@ const POSModule = ({ inventory, onTransaction }) => {
               <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{subtotal.toLocaleString()} so'm</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-dim)' }}>
-              <span>Chegirma</span>
+              <span>Chegirma {discountPercent > 0 && `(${discountPercent}%)`}</span>
               <span style={{ fontWeight: '600', color: 'var(--accent-green)' }}>-{discount.toLocaleString()} so'm</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-dim)' }}>
