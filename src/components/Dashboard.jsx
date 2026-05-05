@@ -288,14 +288,7 @@ const Dashboard = ({ stats, inventory, transactions }) => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="btn-pos"
-              style={{ height: '80px', fontSize: '1.4rem', background: 'var(--accent-green)' }}
-            >
-              <Plus size={24} /> {t('new_sale')}
-            </motion.button>
+
             
             <div className="glass-card" style={{ padding: '25px', flex: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
