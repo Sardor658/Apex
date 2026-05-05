@@ -139,7 +139,9 @@ export const translations = {
     turnover_trend: "Aylanma",
     profit_trend: "Foyda",
     net_trend: "Sof",
-    items_trend: "Dona"
+    items_trend: "Dona",
+    no_products_yet: "Hozircha mahsulot yo'q",
+    inventory_empty: "Ombor bo'sh"
   },
   uzk: {
     dashboard: "Дашборд",
@@ -281,7 +283,9 @@ export const translations = {
     turnover_trend: "Айланма",
     profit_trend: "Фойда",
     net_trend: "Соф",
-    items_trend: "Дона"
+    items_trend: "Дона",
+    no_products_yet: "Ҳозирча маҳсулот йўқ",
+    inventory_empty: "Омбор бўш"
   },
   ru: {
     dashboard: "Дашборд",
@@ -423,7 +427,9 @@ export const translations = {
     turnover_trend: "Оборот",
     profit_trend: "Прибыль",
     net_trend: "Чистая",
-    items_trend: "Шт"
+    items_trend: "Шт",
+    no_products_yet: "Товаров пока нет",
+    inventory_empty: "Склад пуст"
   },
   en: {
     dashboard: "Dashboard",
@@ -565,6 +571,8 @@ export const translations = {
     turnover_trend: "Turnover",
     profit_trend: "Profit",
     net_trend: "Net",
-    items_trend: "Pcs"
+    items_trend: "Pcs",
+    no_products_yet: "No products yet",
+    inventory_empty: "Inventory empty"
   }
 };

@@ -234,8 +234,8 @@ const Dashboard = ({ stats, inventory, transactions }) => {
     },
     { 
       label: t('popular_product'), 
-      value: salesByProduct[0]?.label || t('popular_product_demo'), 
-      subtitle: t('top_selling'),
+      value: inventory.length > 0 ? (salesByProduct[0]?.label || t('popular_product_demo')) : t('no_products_yet'), 
+      subtitle: inventory.length > 0 ? t('top_selling') : t('inventory_empty'),
       color: 'var(--accent-purple)', 
       icon: Package
     },
