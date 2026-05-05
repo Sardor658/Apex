@@ -28,7 +28,7 @@ const ReportsModule = ({ transactions, inventory, staff, currentUser, onDeleteTr
   
   const taxPercent = Number(currentUser?.taxRate) || 0;
   const taxes = turnover * (taxPercent / 100);
-  const netProfit = grossProfit - totalSalaries - taxes;
+  const netProfit = grossProfit - taxes;
   const totalItemsSold = transactions.reduce((acc, t) => acc + t.items.reduce((ia, i) => ia + i.qty, 0), 0);
 
   const stats = [
@@ -152,7 +152,7 @@ const ReportsModule = ({ transactions, inventory, staff, currentUser, onDeleteTr
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {[
               { label: t('cogs'), val: turnover > 0 ? (cogs / turnover) * 100 : 0, color: 'var(--accent-orange)' },
-              { label: t('salaries'), val: turnover > 0 ? (totalSalaries / turnover) * 100 : 0, color: 'var(--accent-purple)' },
+              { label: t('taxes'), val: turnover > 0 ? (taxes / turnover) * 100 : 0, color: 'var(--accent-purple)' },
               { label: t('net_profit'), val: turnover > 0 ? (netProfit / turnover) * 100 : 0, color: 'var(--accent-green)' },
             ].map((item, i) => (
               <div key={i}>
