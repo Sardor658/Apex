@@ -394,7 +394,7 @@ const Dashboard = ({ stats, inventory, transactions }) => {
                 {[
                   { label: t('in_stock'), value: `${inventory.length} ${t('ta')}`, color: 'var(--accent-blue)', icon: Package },
                   { label: t('low_stock_warning'), value: `${lowStock.length} ${t('ta')}`, color: 'var(--accent-orange)', icon: AlertTriangle },
-                  { label: t('total_value'), value: `${inventory.reduce((acc, i) => acc + (Number(i.price) * (Number(i.stock) || 0)), 0).toLocaleString()} so'm`, color: 'var(--accent-green)', icon: DollarSign },
+                  { label: t('total_value'), value: `${inventory.reduce((acc, i) => acc + ((Number(i.sellingPrice) || 0) * (Number(i.stock) || 0)), 0).toLocaleString()} so'm`, color: 'var(--accent-green)', icon: DollarSign },
                 ].map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

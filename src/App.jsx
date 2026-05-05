@@ -10,6 +10,7 @@ import Auth from './components/Auth';
 import StaffModule from './components/StaffModule';
 import StoreSetup from './components/StoreSetup';
 import SettingsModule from './components/SettingsModule';
+import ProfileModule from './components/ProfileModule';
 import LandingPage from './components/LandingPage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from './components/LanguageContext';
@@ -70,7 +71,7 @@ function App() {
     const dailyRevenue = todaysTransactions.reduce((acc, t) => acc + t.total, 0);
     const dailyProfit = todaysTransactions.reduce((acc, t) => acc + (t.totalProfit || 0), 0);
     const orders = todaysTransactions.length;
-    const totalInventoryValue = inventory.reduce((acc, i) => acc + (i.stock * i.sellingPrice), 0);
+    const totalInventoryValue = inventory.reduce((acc, i) => acc + ((Number(i.stock) || 0) * (Number(i.sellingPrice) || 0)), 0);
     const customers = new Set(transactions.map(t => t.id)).size; 
     const avgOrder = orders > 0 ? dailyRevenue / orders : 0;
 
