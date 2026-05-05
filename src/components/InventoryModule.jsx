@@ -7,7 +7,7 @@ import Barcode from 'react-barcode';
 import ConfirmModal from './ConfirmModal';
 import { useNotification } from './NotificationSystem';
 
-const InventoryModule = ({ inventory, isAuthorized, onAdd, onUpdate, onDelete, currentUser }) => {
+const InventoryModule = ({ inventory, isAuthorized, onAdd, onUpdate, onDelete, currentUser, showAddButton = true }) => {
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -131,7 +131,12 @@ const InventoryModule = ({ inventory, isAuthorized, onAdd, onUpdate, onDelete, c
             <Search size={18} color="var(--text-dim)" />
             <input type="text" placeholder="Qidirish..." />
           </div>
-
+          {showAddButton && (
+            <button className="btn-pos" onClick={() => handleOpenModal()}>
+              <Plus size={18} />
+              <span>Yangi mahsulot</span>
+            </button>
+          )}
         </div>
       </div>
 

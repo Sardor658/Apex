@@ -240,7 +240,7 @@ function App() {
       case 'pos': return <POSModule inventory={inventory} onTransaction={handleTransaction} />;
       case 'inventory':
       case 'products':
-        return <InventoryModule inventory={inventory} isAuthorized={true} currentUser={currentUser} onAdd={(item) => { setInventory(p => [...p, {...item, id: Date.now()}]); showNotification("Yangi mahsulot qo'shildi!", 'success'); }} onUpdate={(id, data) => { setInventory(p => p.map(i => i.id === id ? {...i, ...data} : i)); showNotification("Mahsulot yangilandi!", 'success'); }} onDelete={(id) => { setInventory(p => p.filter(i => i.id !== id)); showNotification("Mahsulot o'chirildi!", 'error'); }} />;
+        return <InventoryModule inventory={inventory} isAuthorized={true} currentUser={currentUser} showAddButton={activeTab === 'inventory'} onAdd={(item) => { setInventory(p => [...p, {...item, id: Date.now()}]); showNotification("Yangi mahsulot qo'shildi!", 'success'); }} onUpdate={(id, data) => { setInventory(p => p.map(i => i.id === id ? {...i, ...data} : i)); showNotification("Mahsulot yangilandi!", 'success'); }} onDelete={(id) => { setInventory(p => p.filter(i => i.id !== id)); showNotification("Mahsulot o'chirildi!", 'error'); }} />;
       case 'suppliers':
         return <SuppliersModule suppliers={suppliers} onAddSupplier={(s) => setSuppliers(p => [...p, {...s, id: Date.now()}])} onDeleteSupplier={(id) => setSuppliers(p => p.filter(s => s.id !== id))} inventory={inventory} onUpdateInventory={(id, data) => setInventory(p => p.map(i => i.id.toString() === id.toString() ? {...i, ...data} : i))} currentUser={currentUser} />;
       case 'reports':
