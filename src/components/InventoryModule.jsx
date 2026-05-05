@@ -131,10 +131,7 @@ const InventoryModule = ({ inventory, isAuthorized, onAdd, onUpdate, onDelete, c
             <Search size={18} color="var(--text-dim)" />
             <input type="text" placeholder="Qidirish..." />
           </div>
-          <button className="btn-pos" onClick={() => handleOpenModal()}>
-            <Plus size={18} />
-            <span>Yangi mahsulot</span>
-          </button>
+
         </div>
       </div>
 
