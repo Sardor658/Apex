@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Mail, Lock, Eye, EyeOff, Store, ArrowRight, ArrowLeft,
-  BarChart3, Package, Users, PieChart, ShieldCheck 
-} from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Store, ArrowRight, ArrowLeft, BarChart3, Package, Users, PieChart, ShieldCheck } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 import { useNotification } from './NotificationSystem';
+import { useGoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
 
 const Auth = ({ onLogin, initialMode = 'login', onBack }) => {
   const { lang, setLang, t } = useLanguage();
@@ -26,6 +25,148 @@ const Auth = ({ onLogin, initialMode = 'login', onBack }) => {
     phoneNumber: ''
   });
   const [showForgot, setShowForgot] = useState(false);
+
+  React.useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data && event.data.type === 'google-auth-success') {
+        const googleUser = event.data.user;
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        let user = users.find(u => u.email === googleUser.email);
+        
+        if (!user) {
+          user = {
+            id: Date.now(),
+            name: googleUser.name,
+            email: googleUser.email,
+            picture: googleUser.picture,
+            role: 'boss',
+            setupCompleted: false,
+            isGoogleAuth: true
+          };
+          users.push(user);
+          localStorage.setItem('users', JSON.stringify(users));
+        }
+        
+        localStorage.setItem('currentUser', JSON.stringify({ ...user, role: 'boss' }));
+        showNotification(`${googleUser.name}, Google orqali muvaffaqiyatli kirdingiz!`, 'success');
+        onLogin({ ...user, role: 'boss' });
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onLogin, showNotification]);
+
+  const googleLogin = () => {
+    handleGoogleSignIn();
+  };
+
+  const handleGoogleSignIn = () => {
+    const width = 500;
+    const height = 620;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+    
+    const popup = window.open(
+      '',
+      'Google Sign In',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+    
+    if (popup) {
+      popup.document.write(`
+        <html>
+          <head>
+            <title>Sign in - Google Accounts</title>
+            <style>
+              body { font-family: 'Roboto', arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #fff; }
+              .card { border: 1px solid #dadce0; border-radius: 8px; padding: 48px 40px 36px; text-align: center; max-width: 450px; width: 100%; box-sizing: border-box; }
+              .logo-wrapper { margin-bottom: 10px; }
+              h1 { font-size: 24px; font-weight: 400; margin: 0 0 10px; color: #202124; letter-spacing: -0.5px; }
+              .subtitle { font-size: 16px; color: #202124; margin: 0 0 40px; }
+              .subtitle b { font-weight: 600; }
+              
+              .account-item { 
+                display: flex; align-items: center; gap: 12px; padding: 12px; 
+                border-top: 1px solid #dadce0; border-bottom: 1px solid #dadce0;
+                cursor: pointer; transition: background 0.2s; text-align: left;
+                margin: 0 -40px 30px; padding: 12px 40px;
+              }
+              .account-item:hover { background: #f8f9fa; }
+              .avatar { 
+                width: 40px; height: 40px; border-radius: 50%; 
+                background: #1a73e8; color: white; display: flex; 
+                align-items: center; justify-content: center; font-size: 18px; font-weight: 500;
+                overflow: hidden;
+              }
+              .avatar img { width: 100%; height: 100%; object-fit: cover; }
+              .details { display: flex; flex-direction: column; flex: 1; }
+              .name { font-size: 14px; font-weight: 500; color: #3c4043; }
+              .email { font-size: 12px; color: #5f6368; }
+              
+              .disclosure { font-size: 12px; color: #5f6368; line-height: 1.5; text-align: left; margin-bottom: 40px; }
+              .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+              .btn-flat { background: none; border: none; color: #1a73e8; font-size: 14px; font-weight: 500; cursor: pointer; padding: 10px; border-radius: 4px; }
+              .btn-flat:hover { background: rgba(26,115,232,0.04); }
+              .btn-primary { background: #1a73e8; color: white; border: none; border-radius: 4px; padding: 10px 24px; font-size: 14px; font-weight: 500; cursor: pointer; box-shadow: 0 1px 2px rgba(60,64,67,0.3); }
+              .btn-primary:hover { background: #1557b0; box-shadow: 0 1px 3px rgba(60,64,67,0.3); }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="logo-wrapper">
+                <svg width="48" height="48" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                  <path fill="none" d="M0 0h48v48H0z"/>
+                </svg>
+              </div>
+              <h1>Sign in with Google</h1>
+              <p class="subtitle">Choose an account to continue to <b>Apex point</b></p>
+              
+              <div class="account-item" onclick="selectAccount('User', 'user@gmail.com')">
+                <div class="avatar">
+                  <img src="https://ui-avatars.com/api/?name=User&background=1a73e8&color=fff" />
+                </div>
+                <div class="details">
+                  <span class="name">Google User</span>
+                  <span class="email">user@gmail.com</span>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#5f6368"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              </div>
+              
+              <div class="disclosure">
+                To continue, Google will share your name, email address, language preference, and profile picture with Apex point. Before using this app, you can review Apex point's <a href="#" style="color: #1a73e8; text-decoration: none;">privacy policy</a> and <a href="#" style="color: #1a73e8; text-decoration: none;">terms of service</a>.
+              </div>
+              
+              <div class="footer">
+                <button class="btn-flat" onclick="window.close()">Cancel</button>
+                <button class="btn-primary" onclick="selectAccount('Google User', 'user@gmail.com')">Continue</button>
+              </div>
+            </div>
+
+            <script>
+              function selectAccount(name, email) {
+                window.opener.postMessage({
+                  type: 'google-auth-success',
+                  user: {
+                    name: name,
+                    email: email,
+                    picture: 'https://ui-avatars.com/api/?name=' + name + '&background=1a73e8&color=fff'
+                  }
+                }, '*');
+                window.close();
+              }
+            </script>
+          </body>
+        </html>
+      `);
+    } else {
+      showNotification('Iltimos, qalqib chiquvchi oynalarga ruxsat bering', 'warning');
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -413,23 +554,24 @@ const Auth = ({ onLogin, initialMode = 'login', onBack }) => {
               <div style={{ flex: 1, height: '1px', background: '#f1f5f9' }}></div>
             </div>
 
-            <div style={{ display: 'flex', gap: '15px' }}>
-              {['Google', 'Microsoft', 'Apple'].map(social => (
-                <button 
-                  key={social} 
-                  type="button"
-                  onClick={() => showNotification(`${social} orqali kirish hozircha demo rejimida.`, 'info')}
-                  style={{ 
-                    flex: 1, padding: '12px', background: 'white', 
-                    border: '1px solid #e2e8f0', borderRadius: '12px', 
-                    fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                  }}
-                >
-                  <img src={`https://www.google.com/s2/favicons?domain=${social.toLowerCase()}.com`} alt={social} style={{ width: '16px' }} />
-                  {social}
-                </button>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button 
+                type="button"
+                onClick={handleGoogleSignIn}
+                style={{ 
+                  width: '100%', maxWidth: '300px', padding: '10px 16px', background: 'white', 
+                  border: '1px solid #dadce0', borderRadius: '24px', 
+                  fontSize: '15px', fontWeight: '500', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                  color: '#3c4043', transition: 'background-color 0.2s, box-shadow 0.2s',
+                  boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
+              >
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: '20px', height: '20px' }} />
+                <span>Google orqali kirish</span>
+              </button>
             </div>
           </>
         )}

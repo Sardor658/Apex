@@ -5,15 +5,18 @@ import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { NotificationProvider } from './components/NotificationSystem.jsx'
 import { LanguageProvider } from './components/LanguageContext.jsx'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
-      <LanguageProvider>
-        <NotificationProvider>
-          <App />
-        </NotificationProvider>
-      </LanguageProvider>
+      <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+        <LanguageProvider>
+          <NotificationProvider>
+            <App />
+          </NotificationProvider>
+        </LanguageProvider>
+      </GoogleOAuthProvider>
     </ErrorBoundary>
   </StrictMode>,
 )
