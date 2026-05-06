@@ -14,6 +14,7 @@ import {
   Moon,
   Bot,
   Building,
+  History,
   LogOut
 } from 'lucide-react';
 
@@ -29,7 +30,8 @@ const Sidebar = ({ activeTab, setActiveTab, toggleTheme, theme, role, onLogout }
     { id: 'suppliers', icon: Building, label: t('suppliers'), roles: ['boss', 'manager'] },
     { id: 'staff', icon: Users, label: t('staff'), roles: ['boss'] },
     { id: 'reports', icon: BarChart3, label: t('reports'), roles: ['boss', 'manager'] },
-    { id: 'settings', icon: Settings, label: "Sozlamalar", roles: ['boss', 'manager', 'worker'] },
+    { id: 'history', icon: History, label: "Kunlik Tarix", roles: ['boss', 'manager'] },
+    { id: 'settings', icon: Settings, label: t('settings'), roles: ['boss', 'manager', 'worker'] },
   ];
 
   const menuItems = allMenuItems.filter(item => item.roles.includes(role));
@@ -129,7 +131,7 @@ const Sidebar = ({ activeTab, setActiveTab, toggleTheme, theme, role, onLogout }
 
       <div style={{ marginTop: '0', display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 0' }}>
         <a 
-          href="https://t.me/SmartPOS_ERP_Bot" 
+          href="https://t.me/apex_point_bot" 
           target="_blank" 
           rel="noopener noreferrer"
           className="sidebar-item" 

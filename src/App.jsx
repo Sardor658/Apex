@@ -6,6 +6,7 @@ import POSModule from './components/POSModule';
 import InventoryModule from './components/InventoryModule';
 import SuppliersModule from './components/SuppliersModule';
 import ReportsModule from './components/ReportsModule';
+import HistoryModule from './components/HistoryModule';
 import Auth from './components/Auth';
 import StaffModule from './components/StaffModule';
 import StoreSetup from './components/StoreSetup';
@@ -66,13 +67,45 @@ function App() {
   }, [inventory, suppliers, staff, transactions, theme, currentUser]);
 
   const calculateStats = useCallback(() => {
-    const today = new Date().setHours(0,0,0,0);
-    const todaysTransactions = transactions.filter(t => new Date(t.date).setHours(0,0,0,0) === today);
+    const now = new Date();
+    const todayStart = new Date().setHours(0,0,0,0);
+    
+    const todaysTransactions = transactions.filter(t => new Date(t.date).setHours(0,0,0,0) === todayStart);
+
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+
+    const monthlyTransactions = transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+    });
+
     const dailyRevenue = todaysTransactions.reduce((acc, t) => acc + t.total, 0);
-    const dailyProfit = todaysTransactions.reduce((acc, t) => acc + (t.totalProfit || 0), 0);
+    const dailyGrossProfit = todaysTransactions.reduce((acc, t) => acc + (t.totalProfit || 0), 0);
+    
+    const monthlyRevenue = monthlyTransactions.reduce((acc, t) => acc + t.total, 0);
+    const monthlyProfit = monthlyTransactions.reduce((acc, t) => acc + (t.totalProfit || 0), 0);
+    
+    let totalSalaries = staff.reduce((acc, member) => acc + (Number(member.salary) || 0), 0);
+    
+    // Fallback to setup data (avgSalary * employeeCount) if no staff members added
+    if (totalSalaries === 0 && currentUser) {
+      const count = Number(currentUser.employeeCount) || 0;
+      const avg = Number(currentUser.avgSalary) || 0;
+      totalSalaries = count * avg;
+    }
+
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dailySalaries = totalSalaries / daysInMonth;
+    const dailyProfit = todaysTransactions.length > 0 ? dailyGrossProfit - dailySalaries : 0;
+    
+    const currentDayOfMonth = now.getDate();
+    const salariesAccruedSoFar = dailySalaries * currentDayOfMonth;
+    const monthlyNetProfit = monthlyTransactions.length > 0 ? monthlyProfit - salariesAccruedSoFar : 0;
+
     const orders = todaysTransactions.length;
     const totalInventoryValue = inventory.reduce((acc, i) => acc + ((Number(i.stock) || 0) * (Number(i.sellingPrice) || 0)), 0);
-    const customers = new Set(transactions.map(t => t.id)).size; 
+    const customers = new Set(todaysTransactions.map(t => t.id)).size; 
     const avgOrder = orders > 0 ? dailyRevenue / orders : 0;
 
     // Calculate Global Rankings
@@ -93,6 +126,11 @@ function App() {
     return { 
       dailyRevenue, 
       dailyProfit, 
+      dailyGrossProfit,
+      monthlyRevenue,
+      monthlyProfit,
+      totalSalaries,
+      monthlyNetProfit,
       orders, 
       customers, 
       avgOrder, 
@@ -114,7 +152,7 @@ function App() {
 
   const handleCloseRegister = async () => {
     const stats = calculateStats();
-    const BOT_TOKEN = '8707829956:AAE2OoFPXH8LJSRTa7MxWmzqHuCnm29_jyQ';
+    const BOT_TOKEN = '8244682613:AAHzrXUqLrDWv36BiOxgyxkTtOUfTBXy0l0';
     const CHAT_ID = currentUser?.telegramId;
     if (!CHAT_ID) {
       showNotification("Telegram ID kiritilmagan. Hisobot yuborilmadi.", 'info');
@@ -150,11 +188,15 @@ function App() {
     return '+' + clean;
   };
 
-  const sendTelegramNotification = async (cartItems, total, paymentMethod) => {
-    const BOT_TOKEN = '8707829956:AAE2OoFPXH8LJSRTa7MxWmzqHuCnm29_jyQ';
-    const CHAT_ID = currentUser?.telegramId || '6512684824'; // Default to boss if no ID yet, but user wants phone linking
-    const itemsList = cartItems.map(item => `🔹 ${item.name} - ${item.qty} ta x ${item.sellingPrice.toLocaleString()} so'm`).join('\n');
-    const message = `🛍 *Yangi Sotuv!* \n\n🏪 Do'kon: ${currentUser?.storeName}\n👤 Sotuvchi: ${currentUser?.name}\n📞 Tel: ${formatPhoneForDisplay(currentUser?.phoneNumber)}\n--------------------------\n${itemsList}\n--------------------------\n💰 *Jami: ${total.toLocaleString()} so'm*\n💳 To'lov: ${paymentMethod.toUpperCase()}`;
+  const sendTelegramNotification = async (cartItems, total, paymentMethod, totalProfit) => {
+    const BOT_TOKEN = '8244682613:AAHzrXUqLrDWv36BiOxgyxkTtOUfTBXy0l0';
+    const CHAT_ID = currentUser?.telegramId;
+    if (!CHAT_ID) return;
+    const itemsList = cartItems.map(item => {
+      const profit = (item.sellingPrice - (item.purchasePrice || 0)) * item.qty;
+      return `🔹 ${item.name} - ${item.qty} ta x ${item.sellingPrice.toLocaleString()} so'm (Foyda: ${profit.toLocaleString()})`;
+    }).join('\n');
+    const message = `🛍 *Yangi Sotuv!* \n\n🏪 Do'kon: ${currentUser?.storeName}\n👤 Sotuvchi: ${currentUser?.name}\n📞 Tel: ${formatPhoneForDisplay(currentUser?.phoneNumber)}\n--------------------------\n${itemsList}\n--------------------------\n💰 *Jami summa:* ${total.toLocaleString()} so'm\n💎 *Sof Foyda:* ${totalProfit.toLocaleString()} so'm\n💳 To'lov: ${paymentMethod.toUpperCase()}`;
     try {
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
@@ -167,7 +209,7 @@ function App() {
   };
 
   const sendOutOfStockAlert = async (item) => {
-    const BOT_TOKEN = '8707829956:AAE2OoFPXH8LJSRTa7MxWmzqHuCnm29_jyQ';
+    const BOT_TOKEN = '8244682613:AAHzrXUqLrDWv36BiOxgyxkTtOUfTBXy0l0';
     const CHAT_ID = currentUser?.telegramId;
     if (!CHAT_ID) return;
     const message = `⚠️ *DIQQAT! MAHSULOT TUGADI*\n\n📦 Mahsulot: ${item.name}\n🔢 Shtrix-kod: ${item.barcode || item.sku}\n🛑 Iltimos, zudlik bilan buyurtma bering!`;
@@ -188,7 +230,7 @@ function App() {
     const total = cartItems.reduce((acc, curr) => acc + (curr.sellingPrice * curr.qty), 0);
     const totalProfit = itemsWithProfit.reduce((acc, curr) => acc + curr.profit, 0);
     
-    sendTelegramNotification(cartItems, total, paymentMethod);
+    sendTelegramNotification(cartItems, total, paymentMethod, totalProfit);
     setInventory(prev => prev.map(item => {
       const cartItem = cartItems.find(c => c.id === item.id);
       if (cartItem) {
@@ -208,8 +250,9 @@ function App() {
     
     setTransactions(prev => prev.filter(t => t.id !== id));
     
-    const BOT_TOKEN = '8707829956:AAE2OoFPXH8LJSRTa7MxWmzqHuCnm29_jyQ';
-    const CHAT_ID = currentUser?.telegramId || '6512684824';
+    const BOT_TOKEN = '8244682613:AAHzrXUqLrDWv36BiOxgyxkTtOUfTBXy0l0';
+    const CHAT_ID = currentUser?.telegramId;
+    if (!CHAT_ID) return;
     const message = `❌ *SOTUV BEKOR QILINDI!*\n\n🏪 Do'kon: ${currentUser?.storeName}\n👤 Bekor qildi: ${currentUser?.name}\n💰 Summa: ${trans.total.toLocaleString()} so'm\n🆔 ID: #${id.toString().slice(-6)}\n📅 Vaqt: ${new Date().toLocaleString()}`;
     
     try {
@@ -234,7 +277,17 @@ function App() {
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
-    const renderContent = () => {
+  const handleClearData = () => {
+    if (window.confirm("Barcha qo'shilgan mahsulotlar, xodimlar va daromadlar butunlay o'chib ketadi. Rozimisiz?")) {
+      setInventory([]);
+      setStaff([]);
+      setTransactions([]);
+      setSuppliers([]);
+      showNotification("Barcha ma'lumotlar muvaffaqiyatli tozalandi!", 'success');
+    }
+  };
+
+  const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard stats={calculateStats()} inventory={inventory} transactions={transactions} />;
       case 'pos': return <POSModule inventory={inventory} onTransaction={handleTransaction} />;
@@ -245,12 +298,14 @@ function App() {
         return <SuppliersModule suppliers={suppliers} onAddSupplier={(s) => setSuppliers(p => [...p, {...s, id: Date.now()}])} onDeleteSupplier={(id) => setSuppliers(p => p.filter(s => s.id !== id))} inventory={inventory} onUpdateInventory={(id, data) => setInventory(p => p.map(i => i.id.toString() === id.toString() ? {...i, ...data} : i))} currentUser={currentUser} />;
       case 'reports':
         return <ReportsModule transactions={transactions} inventory={inventory} staff={staff} currentUser={currentUser} onDeleteTransaction={handleDeleteTransaction} />;
+      case 'history':
+        return <HistoryModule transactions={transactions} staff={staff} currentUser={currentUser} />;
       case 'staff':
         return <StaffModule staff={staff} onAdd={(m) => setStaff(p => [...p, {...m, id: Date.now()}])} onUpdate={(id, data) => setStaff(p => p.map(s => s.id === id ? {...s, ...data} : s))} onDelete={(id) => setStaff(p => p.filter(s => s.id !== id))} />;
       case 'profile':
         return <ProfileModule currentUser={currentUser} onUpdateProfile={handleUpdateProfile} />;
       case 'settings':
-        return <SettingsModule currentUser={currentUser} setActiveTab={setActiveTab} toggleTheme={toggleTheme} theme={theme} />;
+        return <SettingsModule currentUser={currentUser} setActiveTab={setActiveTab} toggleTheme={toggleTheme} theme={theme} onClearData={handleClearData} />;
       default: return <Dashboard stats={calculateStats()} />;
     }
   };

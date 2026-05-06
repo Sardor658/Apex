@@ -10,7 +10,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
-      <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
         <LanguageProvider>
           <NotificationProvider>
             <App />

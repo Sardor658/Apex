@@ -303,6 +303,7 @@ const InventoryModule = ({ inventory, isAuthorized, onAdd, onUpdate, onDelete, c
                 <option value="dona" style={{ background: 'var(--bg-deep)' }}>Dona</option>
                 <option value="kg" style={{ background: 'var(--bg-deep)' }}>Kilogramm (KG)</option>
                 <option value="litr" style={{ background: 'var(--bg-deep)' }}>Litr</option>
+                <option value="blok" style={{ background: 'var(--bg-deep)' }}>Blok</option>
               </select>
             </div>
           </div>

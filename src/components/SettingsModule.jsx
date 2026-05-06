@@ -14,7 +14,7 @@ import {
 import { useLanguage } from './LanguageContext';
 import { useNotification } from './NotificationSystem';
 
-const SettingsModule = ({ currentUser, setActiveTab, toggleTheme, theme }) => {
+const SettingsModule = ({ currentUser, setActiveTab, toggleTheme, theme, onClearData }) => {
   const { lang, setLang, t } = useLanguage();
   const { showNotification } = useNotification();
 
@@ -26,9 +26,8 @@ const SettingsModule = ({ currentUser, setActiveTab, toggleTheme, theme }) => {
   ];
 
   const handleClearCache = () => {
-    if (window.confirm("Barcha kesh ma'lumotlarini o'chirmoqchimisiz?")) {
-      // Keep currentUser but clear others if needed, or just notify
-      showNotification("Kesh muvaffaqiyatli tozalandi!", 'success');
+    if (onClearData) {
+      onClearData();
     }
   };
 

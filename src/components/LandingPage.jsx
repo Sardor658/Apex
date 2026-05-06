@@ -3,48 +3,122 @@ import { motion } from 'framer-motion';
 import { Check, ShieldCheck, Users, TrendingUp, Zap, BarChart3 } from 'lucide-react';
 
 const LandingPage = ({ onSignIn, onSignUp }) => {
-  const [vantaEffect, setVantaEffect] = useState(null);
   const vantaRef = useRef(null);
+  const vantaInstanceRef = useRef(null);
+  const [isVantaLoaded, setIsVantaLoaded] = useState(false);
 
   useEffect(() => {
-    if (!vantaEffect && vantaRef.current && window.VANTA) {
-      setVantaEffect(window.VANTA.CLOUDS({
-        el: vantaRef.current,
-        THREE: window.THREE,
-        mouseControls: true,
-        touchControls: true,
-        gyroControls: false,
-        minHeight: 200.00,
-        minWidth: 200.00,
-        backgroundColor: 0x080b18,   // Very dark navy
-        skyColor: 0x0d1f3c,          // Dark midnight blue
-        cloudColor: 0x1a2a4a,        // Deep dark cloud
-        cloudShadowColor: 0x040c1a,  // Almost black shadow
-        sunColor: 0x7c4dff,          // Purple sun (matches accent)
-        sunGlareColor: 0x00e5ff,     // Cyan glare (matches accent)
-        sunlightColor: 0x2979ff,     // Blue sunlight
-        speed: 0.8
-      }));
-    }
-    return () => {
-      if (vantaEffect) vantaEffect.destroy();
+    let isMounted = true;
+    let localVantaInstance = null;
+
+    const loadScript = (src) => {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve();
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
     };
-  }, [vantaEffect]);
+
+    const initVanta = async () => {
+      try {
+        // Ensure scripts are loaded
+        if (!window.THREE) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js');
+        if (!window.VANTA) await loadScript('https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.clouds.min.js');
+
+        // Prevent double initialization if unmounted or already initialized during the await
+        if (!isMounted || vantaInstanceRef.current) return;
+
+        if (vantaRef.current && window.VANTA && window.VANTA.CLOUDS) {
+          localVantaInstance = window.VANTA.CLOUDS({
+            el: vantaRef.current,
+            THREE: window.THREE,
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.00,
+            minWidth: 200.00,
+            backgroundColor: 0x050505,   // Dark background
+            skyColor: 0x080a10,          // Dark navy
+            cloudColor: 0x334155,        // Lighter dark clouds for visibility
+            cloudShadowColor: 0x020817,
+            sunColor: 0x7c4dff,          // Purple accent
+            sunGlareColor: 0x00e5ff,     // Cyan accent
+            sunlightColor: 0x2979ff,
+            speed: 1.2,
+            quantity: 5.0
+          });
+          vantaInstanceRef.current = localVantaInstance;
+          setIsVantaLoaded(true);
+        }
+      } catch (err) {
+        console.error("Vanta initialization failed:", err);
+      }
+    };
+
+    initVanta();
+
+    const handleResize = () => {
+      if (vantaInstanceRef.current) vantaInstanceRef.current.onResize();
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      isMounted = false;
+      if (vantaInstanceRef.current) {
+        vantaInstanceRef.current.destroy();
+        vantaInstanceRef.current = null;
+      } else if (localVantaInstance) {
+        localVantaInstance.destroy();
+      }
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  const bgStyle = {
+    minHeight: '100vh',
+    width: '100vw',
+    display: 'flex',
+    flexDirection: 'column',
+    color: 'white',
+    position: 'relative',
+    overflow: 'hidden',
+    backgroundColor: '#050505', // Base black
+  };
 
   return (
-    <div ref={vantaRef} style={{ minHeight: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', color: 'white', position: 'relative', overflow: 'hidden' }}>
+    <div style={bgStyle}>
+      {/* Vanta Canvas Container - Absolutely positioned to guarantee it sits behind content */}
+      <div 
+        ref={vantaRef} 
+        id="vanta-background"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0
+        }}
+      />
       
-      {/* Header */}
-      <header style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '20px 50px', 
-        background: 'rgba(8, 11, 24, 0.55)', 
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(0, 229, 255, 0.08)',
-        zIndex: 10
-      }}>
+      {/* Ensure content is above vanta canvas */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        {/* Header */}
+        <header style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '20px 50px', 
+          background: 'rgba(5, 5, 5, 0.5)', 
+          backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <div style={{ width: '45px', height: '45px', background: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -104,79 +178,93 @@ const LandingPage = ({ onSignIn, onSignUp }) => {
         {/* Left Text Content */}
         <div style={{ flex: 1, maxWidth: '600px' }}>
           <motion.h1 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
             className="outfit" 
-            style={{ fontSize: '4.5rem', fontWeight: '800', lineHeight: '1.1', marginBottom: '30px', position: 'relative' }}
+            style={{ fontSize: '4.5rem', fontWeight: '900', lineHeight: '1.05', marginBottom: '30px', position: 'relative' }}
           >
-            Biznesingizni <span style={{ color: '#00e5ff', textShadow: '0 0 25px rgba(0,229,255,0.6)' }}>aqlliroq</span> boshqaring <br/>
+            Biznesingizni <br/>
             <span style={{ 
-              background: 'linear-gradient(135deg, #7c4dff, #00e5ff)', 
-              WebkitBackgroundClip: 'text', 
-              WebkitTextFillColor: 'transparent',
-              position: 'relative'
+              color: '#00e5ff', 
+              textShadow: '0 0 30px rgba(0,229,255,0.4)',
+              display: 'inline-block'
             }}>
+              aqlliroq
+            </span> boshqaring <br/>
+            <motion.span 
+              animate={{ 
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+              style={{ 
+                background: 'linear-gradient(90deg, #7c4dff, #00e5ff, #2979ff, #7c4dff)', 
+                backgroundSize: '300% 100%',
+                WebkitBackgroundClip: 'text', 
+                WebkitTextFillColor: 'transparent',
+                position: 'relative'
+              }}
+            >
               Apex point
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: '100%' }}
-                transition={{ duration: 1, delay: 0.8 }}
-                style={{ position: 'absolute', bottom: '5px', left: 0, height: '4px', background: 'linear-gradient(90deg, #7c4dff, transparent)', borderRadius: '2px' }}
+                transition={{ duration: 1.2, delay: 0.8 }}
+                style={{ position: 'absolute', bottom: '5px', left: 0, height: '6px', background: 'linear-gradient(90deg, #7c4dff, transparent)', borderRadius: '3px' }}
               />
-            </span> bilan
+            </motion.span> bilan
           </motion.h1>
           
           <motion.p 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            style={{ fontSize: '1.25rem', color: 'rgba(255,255,255,0.65)', marginBottom: '45px', lineHeight: '1.7', maxWidth: '520px' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.5 }}
+            style={{ fontSize: '1.35rem', color: 'rgba(255,255,255,0.7)', marginBottom: '50px', lineHeight: '1.6', maxWidth: '540px', fontWeight: '500' }}
           >
-            Sotuvlar, ombor, mijozlar va hisobotlarni bir joyda soddalashtirish uchun kuchli POS tizimi. Real vaqtda biznesingizni nazorat qiling.
+            Sotuvlar, ombor va hisobotlarni bir joyda soddalashtirish uchun eng kuchli va zamonaviy POS tizimi.
           </motion.p>
           
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            style={{ display: 'flex', gap: '20px' }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            style={{ display: 'flex', gap: '25px' }}
           >
             <motion.button 
-              whileHover={{ scale: 1.05, boxShadow: '0 15px 35px rgba(0, 229, 255, 0.45)' }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(0, 229, 255, 0.4)' }}
+              whileTap={{ scale: 0.95 }}
               onClick={onSignUp}
               style={{ 
                 background: 'linear-gradient(135deg, #00e5ff, #7c4dff)', 
-                color: '#080b18', 
+                color: '#050505', 
                 border: 'none', 
-                borderRadius: '50px', 
-                fontWeight: '800', 
-                fontSize: '1.15rem', 
+                borderRadius: '20px', 
+                fontWeight: '900', 
+                fontSize: '1.2rem', 
                 cursor: 'pointer',
-                padding: '20px 45px',
-                boxShadow: '0 10px 30px rgba(0, 229, 255, 0.35)',
-                transition: 'all 0.3s'
+                padding: '22px 50px',
+                boxShadow: '0 12px 35px rgba(0, 229, 255, 0.3)',
+                transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)'
               }}
             >
-              Bepul boshlash
+              Bepul sinab ko'rish
             </motion.button>
             <motion.button 
-              whileHover={{ background: 'rgba(0, 229, 255, 0.12)', borderColor: 'rgba(0, 229, 255, 0.45)' }}
+              whileHover={{ background: 'rgba(255, 255, 255, 0.08)', borderColor: 'rgba(255, 255, 255, 0.3)' }}
               style={{ 
-                background: 'rgba(0, 229, 255, 0.06)', 
-                color: 'rgba(255,255,255,0.9)', 
-                border: '1px solid rgba(0, 229, 255, 0.25)', 
-                borderRadius: '50px', 
+                background: 'rgba(255, 255, 255, 0.03)', 
+                color: 'white', 
+                border: '1px solid rgba(255, 255, 255, 0.1)', 
+                borderRadius: '20px', 
                 fontWeight: '700', 
-                fontSize: '1.15rem', 
+                fontSize: '1.2rem', 
                 cursor: 'pointer',
-                padding: '20px 45px',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.3s'
+                padding: '22px 50px',
+                backdropFilter: 'blur(20px)',
+                transition: 'all 0.4s'
               }}
             >
-              Batafsil ma'lumot
+              Demo ko'rish
             </motion.button>
           </motion.div>
         </div>
@@ -396,6 +484,7 @@ const LandingPage = ({ onSignIn, onSignUp }) => {
 
         </div>
       </main>
+      </div>
     </div>
   );
 };

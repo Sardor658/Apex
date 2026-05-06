@@ -25,148 +25,54 @@ const Auth = ({ onLogin, initialMode = 'login', onBack }) => {
     phoneNumber: ''
   });
   const [showForgot, setShowForgot] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  React.useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.data && event.data.type === 'google-auth-success') {
-        const googleUser = event.data.user;
-        const users = JSON.parse(localStorage.getItem('users')) || [];
-        let user = users.find(u => u.email === googleUser.email);
-        
-        if (!user) {
-          user = {
-            id: Date.now(),
-            name: googleUser.name,
-            email: googleUser.email,
-            picture: googleUser.picture,
-            role: 'boss',
-            setupCompleted: false,
-            isGoogleAuth: true
-          };
-          users.push(user);
-          localStorage.setItem('users', JSON.stringify(users));
-        }
-        
-        localStorage.setItem('currentUser', JSON.stringify({ ...user, role: 'boss' }));
-        showNotification(`${googleUser.name}, Google orqali muvaffaqiyatli kirdingiz!`, 'success');
-        onLogin({ ...user, role: 'boss' });
+  const handleGoogleSuccess = async (tokenResponse) => {
+    try {
+      setIsGoogleLoading(true);
+      showNotification(t('loading'), 'info');
+      
+      // Fetch user info from Google
+      const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+      });
+      
+      if (!res.ok) throw new Error('Failed to fetch user info');
+      
+      const googleUser = await res.json();
+      const users = JSON.parse(localStorage.getItem('users')) || [];
+      const googleEmail = googleUser.email.toLowerCase();
+      let user = users.find(u => u.email.toLowerCase() === googleEmail);
+      
+      if (!user) {
+        user = {
+          id: Date.now(),
+          name: googleUser.name,
+          email: googleUser.email,
+          picture: googleUser.picture,
+          role: 'boss',
+          setupCompleted: false,
+          isGoogleAuth: true
+        };
+        users.push(user);
+        localStorage.setItem('users', JSON.stringify(users));
       }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [onLogin, showNotification]);
-
-  const googleLogin = () => {
-    handleGoogleSignIn();
-  };
-
-  const handleGoogleSignIn = () => {
-    const width = 500;
-    const height = 620;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-    
-    const popup = window.open(
-      '',
-      'Google Sign In',
-      `width=${width},height=${height},left=${left},top=${top}`
-    );
-    
-    if (popup) {
-      popup.document.write(`
-        <html>
-          <head>
-            <title>Sign in - Google Accounts</title>
-            <style>
-              body { font-family: 'Roboto', arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #fff; }
-              .card { border: 1px solid #dadce0; border-radius: 8px; padding: 48px 40px 36px; text-align: center; max-width: 450px; width: 100%; box-sizing: border-box; }
-              .logo-wrapper { margin-bottom: 10px; }
-              h1 { font-size: 24px; font-weight: 400; margin: 0 0 10px; color: #202124; letter-spacing: -0.5px; }
-              .subtitle { font-size: 16px; color: #202124; margin: 0 0 40px; }
-              .subtitle b { font-weight: 600; }
-              
-              .account-item { 
-                display: flex; align-items: center; gap: 12px; padding: 12px; 
-                border-top: 1px solid #dadce0; border-bottom: 1px solid #dadce0;
-                cursor: pointer; transition: background 0.2s; text-align: left;
-                margin: 0 -40px 30px; padding: 12px 40px;
-              }
-              .account-item:hover { background: #f8f9fa; }
-              .avatar { 
-                width: 40px; height: 40px; border-radius: 50%; 
-                background: #1a73e8; color: white; display: flex; 
-                align-items: center; justify-content: center; font-size: 18px; font-weight: 500;
-                overflow: hidden;
-              }
-              .avatar img { width: 100%; height: 100%; object-fit: cover; }
-              .details { display: flex; flex-direction: column; flex: 1; }
-              .name { font-size: 14px; font-weight: 500; color: #3c4043; }
-              .email { font-size: 12px; color: #5f6368; }
-              
-              .disclosure { font-size: 12px; color: #5f6368; line-height: 1.5; text-align: left; margin-bottom: 40px; }
-              .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
-              .btn-flat { background: none; border: none; color: #1a73e8; font-size: 14px; font-weight: 500; cursor: pointer; padding: 10px; border-radius: 4px; }
-              .btn-flat:hover { background: rgba(26,115,232,0.04); }
-              .btn-primary { background: #1a73e8; color: white; border: none; border-radius: 4px; padding: 10px 24px; font-size: 14px; font-weight: 500; cursor: pointer; box-shadow: 0 1px 2px rgba(60,64,67,0.3); }
-              .btn-primary:hover { background: #1557b0; box-shadow: 0 1px 3px rgba(60,64,67,0.3); }
-            </style>
-          </head>
-          <body>
-            <div class="card">
-              <div class="logo-wrapper">
-                <svg width="48" height="48" viewBox="0 0 48 48">
-                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                  <path fill="none" d="M0 0h48v48H0z"/>
-                </svg>
-              </div>
-              <h1>Sign in with Google</h1>
-              <p class="subtitle">Choose an account to continue to <b>Apex point</b></p>
-              
-              <div class="account-item" onclick="selectAccount('User', 'user@gmail.com')">
-                <div class="avatar">
-                  <img src="https://ui-avatars.com/api/?name=User&background=1a73e8&color=fff" />
-                </div>
-                <div class="details">
-                  <span class="name">Google User</span>
-                  <span class="email">user@gmail.com</span>
-                </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#5f6368"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-              </div>
-              
-              <div class="disclosure">
-                To continue, Google will share your name, email address, language preference, and profile picture with Apex point. Before using this app, you can review Apex point's <a href="#" style="color: #1a73e8; text-decoration: none;">privacy policy</a> and <a href="#" style="color: #1a73e8; text-decoration: none;">terms of service</a>.
-              </div>
-              
-              <div class="footer">
-                <button class="btn-flat" onclick="window.close()">Cancel</button>
-                <button class="btn-primary" onclick="selectAccount('Google User', 'user@gmail.com')">Continue</button>
-              </div>
-            </div>
-
-            <script>
-              function selectAccount(name, email) {
-                window.opener.postMessage({
-                  type: 'google-auth-success',
-                  user: {
-                    name: name,
-                    email: email,
-                    picture: 'https://ui-avatars.com/api/?name=' + name + '&background=1a73e8&color=fff'
-                  }
-                }, '*');
-                window.close();
-              }
-            </script>
-          </body>
-        </html>
-      `);
-    } else {
-      showNotification('Iltimos, qalqib chiquvchi oynalarga ruxsat bering', 'warning');
+      
+      localStorage.setItem('currentUser', JSON.stringify({ ...user, role: 'boss' }));
+      showNotification(`${googleUser.name}, ${t('success_login') || 'muvaffaqiyatli kirdingiz!'}`, 'success');
+      onLogin({ ...user, role: 'boss' });
+    } catch (error) {
+      console.error('Google login error:', error);
+      showNotification(t('error_login') || 'Google orqali kirishda xatolik yuz berdi', 'error');
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
+
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => showNotification(t('error_login'), 'error'),
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -289,9 +195,11 @@ const Auth = ({ onLogin, initialMode = 'login', onBack }) => {
         background: 'white', 
         display: 'flex', 
         flexDirection: 'column', 
-        padding: '60px 80px', 
+        padding: '60px 80px 40px', 
         position: 'relative',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
         <style>
           {`
@@ -307,6 +215,10 @@ const Auth = ({ onLogin, initialMode = 'login', onBack }) => {
             }
             .auth-scroll-container::-webkit-scrollbar-thumb:hover {
               background: #94a3b8;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
             }
           `}
         </style>
@@ -557,30 +469,46 @@ const Auth = ({ onLogin, initialMode = 'login', onBack }) => {
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <button 
                 type="button"
-                onClick={handleGoogleSignIn}
+                onClick={() => !isGoogleLoading && loginWithGoogle()}
+                disabled={isGoogleLoading}
                 style={{ 
                   width: '100%', maxWidth: '300px', padding: '10px 16px', background: 'white', 
                   border: '1px solid #dadce0', borderRadius: '24px', 
-                  fontSize: '15px', fontWeight: '500', cursor: 'pointer',
+                  fontSize: '15px', fontWeight: '500', cursor: isGoogleLoading ? 'not-allowed' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                  color: '#3c4043', transition: 'background-color 0.2s, box-shadow 0.2s',
+                  color: '#3c4043', transition: 'all 0.2s',
+                  opacity: isGoogleLoading ? 0.7 : 1,
                   boxShadow: '0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                onMouseOver={(e) => !isGoogleLoading && (e.currentTarget.style.backgroundColor = '#f8f9fa')}
+                onMouseOut={(e) => !isGoogleLoading && (e.currentTarget.style.backgroundColor = 'white')}
               >
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: '20px', height: '20px' }} />
-                <span>Google orqali kirish</span>
+                {isGoogleLoading ? (
+                  <div className="google-spinner" style={{ 
+                    width: '20px', height: '20px', border: '2px solid #f3f3f3', 
+                    borderTop: '2px solid #4285F4', borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}></div>
+                ) : (
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style={{ width: '22px', height: '22px' }} />
+                )}
+                <span style={{ fontSize: '1rem', fontWeight: '600', color: '#1f2937' }}>
+                  {isGoogleLoading ? t('loading') : t('google_login_btn')}
+                </span>
               </button>
             </div>
           </>
         )}
 
-        <div style={{ marginTop: 'auto', textAlign: 'center', fontSize: '0.9rem', color: '#64748b' }}>
+        <div style={{ marginTop: '40px', textAlign: 'center', fontSize: '0.95rem', color: '#64748b' }}>
           {isLogin ? t('dont_have_account') : t('already_have_account')}
           <button 
             onClick={() => setIsLogin(!isLogin)}
-            style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: '700', cursor: 'pointer' }}
+            style={{ 
+              background: 'none', border: 'none', color: '#2563eb', 
+              fontWeight: '800', cursor: 'pointer', marginLeft: '8px',
+              textDecoration: 'underline', textUnderlineOffset: '4px'
+            }}
           >
             {isLogin ? t('register') : t('login')}
           </button>
@@ -588,9 +516,10 @@ const Auth = ({ onLogin, initialMode = 'login', onBack }) => {
 
         {/* Footer */}
         <div style={{ 
-          position: 'absolute', bottom: '20px', left: '0', right: '0', 
-          display: 'flex', justifyContent: 'center', gap: '30px', 
-          fontSize: '0.8rem', color: '#94a3b8' 
+          marginTop: '60px',
+          paddingBottom: '20px',
+          display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '30px', 
+          fontSize: '0.8rem', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <ShieldCheck size={14} color="#10b981" />

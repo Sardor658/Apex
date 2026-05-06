@@ -211,33 +211,32 @@ const Dashboard = ({ stats, inventory, transactions }) => {
 
   const statCards = [
     { 
-      label: t('daily_revenue'), 
-      value: `${stats.dailyRevenue.toLocaleString()} so'm`, 
-      subtitle: `${stats.orders} ${t('orders')}`,
+      label: 'Oylik Savdo',
+      value: `${stats.monthlyRevenue.toLocaleString()} so'm`, 
+      subtitle: 'Shu oydagi jami tushum',
+      color: 'var(--accent-orange)', 
+      hasWave: true 
+    },
+    { 
+      label: 'Oylik Foyda',
+      value: `${stats.monthlyProfit.toLocaleString()} so'm`, 
+      subtitle: 'Maoshlar ayirilmagan yalpi foyda',
       color: 'var(--accent-blue)', 
       hasWave: true 
     },
     { 
-      label: t('daily_profit'), 
+      label: 'Bugungi Sof Foyda',
       value: `${stats.dailyProfit.toLocaleString()} so'm`, 
-      subtitle: t('net_profit_indicator'),
+      subtitle: `Bugungi foyda - ${(stats.totalSalaries / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()).toLocaleString(undefined, {maximumFractionDigits: 0})} so'm (1 kun maosh)`,
       color: 'var(--accent-green)', 
       hasWave: true 
     },
     { 
-      label: t('low_stock'), 
-      value: `${lowStock.length} ${t('products')}`, 
-      subtitle: t('needs_restock'),
-      color: 'var(--accent-orange)', 
-      hasWave: true,
-      alert: true
-    },
-    { 
-      label: t('popular_product'), 
-      value: inventory.length > 0 ? (salesByProduct[0]?.label || t('popular_product_demo')) : t('no_products_yet'), 
-      subtitle: inventory.length > 0 ? t('top_selling') : t('inventory_empty'),
+      label: 'Oylik Sof Foyda',
+      value: `${stats.monthlyNetProfit.toLocaleString()} so'm`, 
+      subtitle: `Oylik foyda - ${(stats.totalSalaries / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() * new Date().getDate()).toLocaleString(undefined, {maximumFractionDigits: 0})} so'm (${new Date().getDate()} kunlik maosh)`,
       color: 'var(--accent-purple)', 
-      icon: Package
+      hasWave: true 
     },
   ];
 

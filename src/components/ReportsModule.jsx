@@ -59,13 +59,26 @@ const ReportsModule = ({ transactions, inventory, staff, currentUser, onDeleteTr
         <button 
           onClick={() => {
             const message = `📊 *MOLIYAVIY HISOBOT* (Hozirgi Holat)\n\n🏪 Do'kon: ${currentUser?.storeName}\n💰 Aylanma: ${turnover.toLocaleString()} so'm\n📈 Yalpi foyda: ${grossProfit.toLocaleString()} so'm\n💎 Sof foyda: ${netProfit.toLocaleString()} so'm\n🛒 Sotilgan mahsulotlar: ${totalItemsSold} ta\n📅 Sana: ${new Date().toLocaleString()}`;
-            const BOT_TOKEN = '8707829956:AAE2OoFPXH8LJSRTa7MxWmzqHuCnm29_jyQ';
-            const CHAT_ID = currentUser?.telegramId || '6512684824';
+            const BOT_TOKEN = '8244682613:AAHzrXUqLrDWv36BiOxgyxkTtOUfTBXy0l0';
+            const CHAT_ID = currentUser?.telegramId;
+            if (!CHAT_ID) {
+              showNotification("Iltimos avval Profil sozlamalaridan Telegram Chat ID ni kiriting!", "warning");
+              return;
+            }
             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: 'Markdown' })
-            }).then(() => showNotification(t('report_sent'), 'success'));
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.ok) {
+                showNotification(t('report_sent'), 'success');
+              } else {
+                showNotification("TG Xatosi: " + data.description, 'error');
+              }
+            })
+            .catch(() => showNotification(t('error_network'), 'error'));
           }}
           className="btn-pos" 
           style={{ background: '#0088cc', gap: '8px' }}
@@ -126,7 +139,9 @@ const ReportsModule = ({ transactions, inventory, staff, currentUser, onDeleteTr
                     <DollarSign size={18} color="var(--accent-blue)" />
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>#{t.id.toString().slice(-6)}</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.items?.map(i => i.name).join(', ')}>
+                      {t.items?.length > 0 ? t.items.map(i => i.name).join(', ') : `#${t.id.toString().slice(-6)}`}
+                    </div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{new Date(t.date).toLocaleString()}</div>
                   </div>
                 </div>

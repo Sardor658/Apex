@@ -10,7 +10,8 @@ import {
   Save, 
   X,
   KeyRound,
-  CheckCircle2
+  CheckCircle2,
+  Bot
 } from 'lucide-react';
 import { useNotification } from './NotificationSystem';
 import { useLanguage } from './LanguageContext';
@@ -22,10 +23,12 @@ const ProfileModule = ({ currentUser, onUpdateProfile }) => {
 
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [isEditingTelegramId, setIsEditingTelegramId] = useState(false);
   
   const [newUsername, setNewUsername] = useState(currentUser?.name || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [newTelegramId, setNewTelegramId] = useState(currentUser?.telegramId || '');
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -51,6 +54,12 @@ const ProfileModule = ({ currentUser, onUpdateProfile }) => {
     onUpdateProfile({ name: newUsername });
     setIsEditingUsername(false);
     showNotification("Username muvaffaqiyatli o'zgartirildi!", 'success');
+  };
+
+  const handleSaveTelegramId = () => {
+    onUpdateProfile({ telegramId: newTelegramId });
+    setIsEditingTelegramId(false);
+    showNotification("Telegram ID muvaffaqiyatli saqlandi!", 'success');
   };
 
   const handleSavePassword = () => {
@@ -282,6 +291,81 @@ const ProfileModule = ({ currentUser, onUpdateProfile }) => {
               {currentUser?.role === 'boss' && <CheckCircle2 size={16} color="var(--accent-green)" />}
             </div>
           </div>
+
+          {/* Telegram ID Section */}
+          <div style={{ 
+            padding: '20px', 
+            background: 'rgba(255,255,255,0.03)', 
+            borderRadius: '24px', 
+            border: '1px solid var(--glass-border)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '15px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-dim)' }}>
+              <Bot size={18} />
+              <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>Telegram Chat ID</span>
+            </div>
+            
+            <AnimatePresence mode="wait">
+              {!isEditingTelegramId ? (
+                <motion.div 
+                  key="view"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <span style={{ fontSize: '1.2rem', fontWeight: '700', color: currentUser?.telegramId ? 'var(--accent-cyan)' : 'var(--text-dim)' }}>
+                    {currentUser?.telegramId || "Kiritilmagan"}
+                  </span>
+                  <button 
+                    onClick={() => setIsEditingTelegramId(true)}
+                    style={{ background: 'none', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer' }}
+                  >
+                    <Edit3 size={18} />
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="edit"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{ display: 'flex', gap: '10px' }}
+                >
+                  <input 
+                    type="text" 
+                    value={newTelegramId}
+                    onChange={(e) => setNewTelegramId(e.target.value)}
+                    placeholder="Masalan: 6512684824"
+                    style={{ 
+                      flex: 1, 
+                      background: 'rgba(255,255,255,0.05)', 
+                      border: '1px solid var(--accent-cyan)', 
+                      borderRadius: '10px', 
+                      padding: '8px 12px',
+                      color: 'white',
+                      outline: 'none'
+                    }}
+                  />
+                  <button 
+                    onClick={handleSaveTelegramId}
+                    style={{ padding: '8px', background: 'var(--accent-green)', borderRadius: '10px', border: 'none', color: 'white', cursor: 'pointer' }}
+                  >
+                    <Save size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setIsEditingTelegramId(false)}
+                    style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', border: 'none', color: 'white', cursor: 'pointer' }}
+                  >
+                    <X size={18} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
         </div>
 
         {/* Password Change Section */}
